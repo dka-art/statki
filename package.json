@@ -1,0 +1,13 @@
+{
+  "name": "statki",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Statki online (1 na 1) na Cloudflare Workers + Durable Objects",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}

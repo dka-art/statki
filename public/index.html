@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Statki – gra online</title>
+  <meta name="theme-color" content="#eaf6ff">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E⚓%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="bg-waves" aria-hidden="true"></div>
+
+  <header class="top">
+    <a class="brand" href="/">⚓ Statki</a>
+    <div id="roomInfo" class="roomInfo" hidden>
+      <span class="roomLabel">Kod gry</span>
+      <b id="roomCode" class="roomCode"></b>
+      <button id="copyBtn" class="btn small" type="button">Kopiuj link</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- LOBBY -->
+    <section id="lobby" class="card lobby">
+      <h1>Statki online</h1>
+      <p class="lead">Klasyczna gra w statki dla dwóch osób. Załóż grę i wyślij znajomemu link albo kod.</p>
+
+      <label class="field">
+        <span>Twoje imię</span>
+        <input id="nameInput" maxlength="16" placeholder="np. Marek" autocomplete="nickname">
+      </label>
+
+      <div id="inviteBox" class="invite" hidden>
+        <div class="inviteText">Zaproszenie do gry <b id="inviteCode"></b></div>
+        <button id="joinLinkBtn" class="btn primary big" type="button">Dołącz do gry</button>
+      </div>
+
+      <div id="newBox">
+        <label class="check">
+          <input type="checkbox" id="againChk" checked>
+          <span>Po trafieniu strzelasz ponownie</span>
+        </label>
+        <button id="newBtn" class="btn primary big" type="button">Nowa gra</button>
+
+        <div class="or"><span>lub dołącz kodem</span></div>
+
+        <form id="joinForm" class="joinForm">
+          <input id="codeInput" maxlength="6" placeholder="KOD GRY" autocapitalize="characters" autocomplete="off" spellcheck="false" inputmode="text">
+          <button class="btn big" type="submit">Dołącz</button>
+        </form>
+      </div>
+      <p id="lobbyErr" class="err" hidden></p>
+    </section>
+
+    <!-- PEŁNY POKÓJ -->
+    <section id="fullBox" class="card lobby" hidden>
+      <h1>Ten pokój jest pełny</h1>
+      <p class="lead">W tej grze biorą już udział dwie osoby. Poproś znajomego o nowy kod albo załóż własną grę.</p>
+      <a class="btn primary big" href="/">Wróć na start</a>
+    </section>
+
+    <!-- GRA -->
+    <section id="game" hidden>
+      <div id="connBanner" class="connBanner" hidden>Rozłączono — łączę ponownie…</div>
+
+      <div id="status" class="card status">
+        <div class="players">
+          <div id="plMe" class="pill"></div>
+          <div class="vs">vs</div>
+          <div id="plOpp" class="pill"></div>
+        </div>
+        <div id="statusMain" class="statusMain"></div>
+        <div id="statusSub" class="statusSub"></div>
+        <div id="rulesNote" class="rulesNote"></div>
+      </div>
+
+      <div id="setupPanel" class="card setup" hidden>
+        <h2>Rozstaw flotę</h2>
+        <p class="hint">Wybierz statek i kliknij pole na planszy. „Obróć” (lub klawisz R, prawy przycisk myszy) zmienia kierunek. Kliknięcie ustawionego statku zdejmuje go.</p>
+        <div id="dock" class="dock"></div>
+        <div class="btnRow">
+          <button id="rotBtn" class="btn" type="button">↻ Obróć</button>
+          <button id="randBtn" class="btn" type="button">🎲 Losowo</button>
+          <button id="clrBtn" class="btn ghost" type="button">Wyczyść</button>
+          <button id="readyBtn" class="btn primary" type="button" disabled>Gotowe!</button>
+        </div>
+      </div>
+
+      <div id="waitPanel" class="card setup" hidden>
+        <div class="btnRow center">
+          <button id="unreadyBtn" class="btn" type="button">Zmień ustawienie statków</button>
+        </div>
+      </div>
+
+      <div id="boards" class="boards">
+        <div id="myWrap" class="boardWrap">
+          <h2>Twoja flota</h2>
+          <div id="myBoard" class="board"></div>
+          <div id="myFleet" class="fleet"></div>
+        </div>
+        <div id="enWrap" class="boardWrap">
+          <h2 id="enTitle">Plansza przeciwnika</h2>
+          <div id="enBoard" class="board enemy"></div>
+          <div id="enFleet" class="fleet"></div>
+        </div>
+      </div>
+
+      <div id="endPanel" class="card setup" hidden>
+        <div class="btnRow center">
+          <button id="rematchBtn" class="btn primary big" type="button">Zagraj ponownie</button>
+          <a class="btn big" href="/">Wyjdź</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast" hidden></div>
+  <script src="app.js"></script>
+</body>
+</html>
