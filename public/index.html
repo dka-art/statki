@@ -112,6 +112,29 @@
           <a class="btn big" href="/">Wyjdź</a>
         </div>
       </div>
+
+      <div id="chat" class="card chat">
+        <button id="chatToggle" class="chatHead" type="button" aria-expanded="true" aria-controls="chatBody">
+          <span class="chatTitle">💬 Czat</span>
+          <span id="chatBadge" class="badge" hidden>0</span>
+          <span class="chev" aria-hidden="true">▾</span>
+        </button>
+        <div id="chatBody" class="chatBody">
+          <div id="chatLog" class="chatLog" aria-live="polite"></div>
+          <div class="quick" id="chatQuick">
+            <button type="button" data-q="👋">👋</button>
+            <button type="button" data-q="👍">👍</button>
+            <button type="button" data-q="😅">😅</button>
+            <button type="button" data-q="🎯">🎯</button>
+            <button type="button" data-q="🎉">🎉</button>
+          </div>
+          <form id="chatForm" class="chatForm" autocomplete="off">
+            <input id="chatInput" maxlength="200" placeholder="Napisz wiadomość…" autocomplete="off" enterkeyhint="send">
+            <button id="chatSend" class="btn primary" type="submit">Wyślij</button>
+          </form>
+          <p class="chatNote">Czat działa tylko w trakcie gry i nie jest nigdzie zapisywany na stałe — znika po rewanżu lub zamknięciu pokoju.</p>
+        </div>
+      </div>
     </section>
   </main>
 

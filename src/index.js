@@ -9,6 +9,9 @@ const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // bez I, O, 0, 1
 const CODE_RE = /^[A-HJ-NP-Z2-9]{6}$/;
 const TOKEN_RE = /^[A-Za-z0-9-]{16,64}$/;
 const IDLE_MS = 24 * 60 * 60 * 1000; // pokój znika po 24 h bez aktywności
+const CHAT_MAX_LEN = 200; // znaków w jednej wiadomości
+const CHAT_KEEP = 50; // ile ostatnich wiadomości trzymamy w pokoju
+const CHAT_GAP_MS = 400; // minimalny odstęp między wiadomościami jednego gracza
 
 function makeCode() {
   const bytes = crypto.getRandomValues(new Uint8Array(6));
@@ -28,7 +31,7 @@ function cleanName(raw) {
 }
 
 function newGame() {
-  return { phase: "setup", rules: { again: true }, players: [], turn: null, winner: null, last: null };
+  return { phase: "setup", rules: { again: true }, players: [], turn: null, winner: null, last: null, chat: [] };
 }
 
 function newPlayer(token, name) {
@@ -100,11 +103,15 @@ export class Room extends DurableObject {
   constructor(ctx, env) {
     super(ctx, env);
     this.game = newGame();
+    this.lastChat = {}; // czas ostatniej wiadomości gracza (ochrona przed zalewem)
     // Odpowiedź na „ping” bez budzenia obiektu — utrzymuje połączenia przy życiu.
     this.ctx.setWebSocketAutoResponse(new WebSocketRequestResponsePair("ping", "pong"));
     this.ctx.blockConcurrencyWhile(async () => {
       const saved = await this.ctx.storage.get("game");
-      if (saved) this.game = saved;
+      if (saved) {
+        if (!Array.isArray(saved.chat)) saved.chat = []; // pokoje sprzed dodania czatu
+        this.game = saved;
+      }
     });
   }
 
@@ -176,6 +183,9 @@ export class Room extends DurableObject {
         break;
       case "rematch":
         err = this.rematch(me);
+        break;
+      case "chat":
+        err = this.chat(me, msg.text);
         break;
       default:
         return;
@@ -272,6 +282,23 @@ export class Room extends DurableObject {
     return null;
   }
 
+  // Czat żyje tylko razem z grą: znika po rewanżu i gdy pokój wygaśnie.
+  chat(me, text) {
+    const g = this.game;
+    if (g.players.length < 2) return "Czat włączy się, gdy dołączy przeciwnik.";
+    if (typeof text !== "string") return null;
+    const clean = Array.from(text.replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim())
+      .slice(0, CHAT_MAX_LEN)
+      .join("");
+    if (!clean) return null;
+    const now = Date.now();
+    if (now - (this.lastChat[me] || 0) < CHAT_GAP_MS) return "Wolniej :)";
+    this.lastChat[me] = now;
+    g.chat.push({ by: me, text: clean, ts: now });
+    if (g.chat.length > CHAT_KEEP) g.chat.splice(0, g.chat.length - CHAT_KEEP);
+    return null;
+  }
+
   rematch(me) {
     const g = this.game;
     if (g.phase !== "finished") return "Rewanż jest możliwy po zakończeniu gry.";
@@ -287,6 +314,7 @@ export class Room extends DurableObject {
       g.turn = null;
       g.winner = null;
       g.last = null;
+      g.chat = [];
     }
     return null;
   }
@@ -322,6 +350,7 @@ export class Room extends DurableObject {
         cells: s.cells,
         sunk: s.cells.every((c) => mine.incoming[c] === 2),
       })),
+      chat: g.chat.map((m) => ({ by: m.by, text: m.text, ts: m.ts })),
       incoming: mine.incoming,
       outgoing: theirs ? theirs.incoming : new Array(CELLS).fill(0),
       sunkEnemy: theirs ? sunkOf(theirs).map((s) => ({ id: s.id, name: SHIP_NAMES[s.id], cells: s.cells })) : [],

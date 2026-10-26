@@ -14,6 +14,10 @@ Hostowana na **Cloudflare Workers** (serwer + strona w jednym), kod w **GitHubie
 - Zasady: plansza 10×10, flota 5 + 4 + 3 + 3 + 2 pól, statki mogą się stykać.
   Przy zakładaniu gry wybierasz, czy po trafieniu strzelasz ponownie (jak w papierowej wersji),
   czy strzały idą na zmianę.
+- Mini czat (wiadomości do 200 znaków, szybkie emotki, licznik nieprzeczytanych): działa tylko
+  w trakcie gry i jest trzymany wyłącznie w pokoju — znika po rewanżu lub zamknięciu pokoju,
+  a pokój przechowuje maksymalnie 50 ostatnich wiadomości. Wiadomości są wyświetlane jako
+  zwykły tekst, więc nikt nie wstawi do cudzej strony kodu HTML.
 - Pusty pokój znika po 24 godzinach bez aktywności.
 
 ## Struktura projektu
@@ -78,6 +82,5 @@ npx wrangler deploy
 ## Pomysły na rozbudowę
 
 - wersja dla 3–4 graczy,
-- czat lub emotki w trakcie gry,
 - zapisywanie wyników, dźwięki, animacje zatopienia,
 - własna domena i krótki link do zaproszeń.

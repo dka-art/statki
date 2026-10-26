@@ -28,6 +28,8 @@
     boards: $("#boards"), myWrap: $("#myWrap"), enWrap: $("#enWrap"),
     myBoard: $("#myBoard"), enBoard: $("#enBoard"), myFleet: $("#myFleet"), enFleet: $("#enFleet"),
     toast: $("#toast"),
+    chat: $("#chat"), chatToggle: $("#chatToggle"), chatBadge: $("#chatBadge"), chatLog: $("#chatLog"),
+    chatQuick: $("#chatQuick"), chatForm: $("#chatForm"), chatInput: $("#chatInput"), chatSend: $("#chatSend"),
   };
 
   // ---------- stan ----------
@@ -42,6 +44,10 @@
   let reconnectDelay = 500;
   let toastTimer = null;
   const local = { ships: [], selected: 0, horiz: true, hover: null };
+  let chatSeen = 0;      // znacznik czasu najnowszej przeczytanej wiadomości
+  let chatKey = "";      // zapobiega przebudowie listy, gdy nic się nie zmieniło
+  let unreadNow = 0;
+  const EMOJI_ONLY = /^(?:\p{Extended_Pictographic}|️|‍|\s){1,6}$/u;
 
   // ---------- pomocnicze ----------
   function div(cls, text) {
@@ -328,6 +334,78 @@
     }
   }
 
+  // ---------- czat ----------
+  function updateTitle() {
+    const base = code ? `Statki · ${code}` : "Statki – gra online";
+    document.title = (document.hidden && unreadNow > 0 ? `(${unreadNow}) ` : "") + base;
+  }
+
+  function renderChat() {
+    const msgs = state.chat || [];
+    const me = state.you;
+    const hasOpp = state.names[1 - me] !== null;
+
+    el.chatInput.disabled = !hasOpp;
+    el.chatSend.disabled = !hasOpp;
+    el.chatQuick.querySelectorAll("button").forEach((b) => (b.disabled = !hasOpp));
+    el.chatInput.placeholder = hasOpp ? "Napisz wiadomość…" : "Czat włączy się, gdy dołączy przeciwnik";
+
+    const newest = msgs.length ? msgs[msgs.length - 1].ts : 0;
+    if (newest < chatSeen) chatSeen = 0; // czat został wyczyszczony (rewanż)
+
+    const key = `${hasOpp}:${msgs.length}:${newest}`;
+    if (key !== chatKey) {
+      chatKey = key;
+      const log = el.chatLog;
+      const atBottom = log.scrollHeight - log.scrollTop - log.clientHeight < 40;
+      log.innerHTML = "";
+      if (!msgs.length) {
+        log.appendChild(div("chatEmpty", hasOpp ? "Brak wiadomości — przywitaj się 👋" : "Czat włączy się, gdy dołączy przeciwnik."));
+      }
+      for (const m of msgs) {
+        const bubble = div("msg " + (m.by === me ? "me" : "them") + (EMOJI_ONLY.test(m.text) ? " emoji" : ""));
+        bubble.appendChild(document.createTextNode(m.text)); // textContent — bez wstrzykiwania HTML
+        const t = document.createElement("span");
+        t.className = "time";
+        t.textContent = new Date(m.ts).toLocaleTimeString("pl-PL", { hour: "2-digit", minute: "2-digit" });
+        bubble.appendChild(t);
+        log.appendChild(bubble);
+      }
+      if (atBottom || (msgs.length && msgs[msgs.length - 1].by === me)) log.scrollTop = log.scrollHeight;
+    }
+
+    const open = !el.chat.classList.contains("collapsed");
+    if (open && !document.hidden) chatSeen = newest;
+    unreadNow = msgs.filter((m) => m.by !== me && m.ts > chatSeen).length;
+    el.chatBadge.textContent = String(unreadNow);
+    el.chatBadge.hidden = open || unreadNow === 0;
+    updateTitle();
+  }
+
+  el.chatToggle.addEventListener("click", () => {
+    const collapsed = el.chat.classList.toggle("collapsed");
+    el.chatToggle.setAttribute("aria-expanded", String(!collapsed));
+    if (state) renderChat();
+    if (!collapsed) el.chatLog.scrollTop = el.chatLog.scrollHeight;
+  });
+  el.chatForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const text = el.chatInput.value.trim();
+    if (!text) return;
+    send({ t: "chat", text });
+    el.chatInput.value = "";
+  });
+  el.chatQuick.addEventListener("click", (e) => {
+    const b = e.target.closest("button[data-q]");
+    if (b && !b.disabled) send({ t: "chat", text: b.dataset.q });
+  });
+  document.addEventListener("visibilitychange", () => { if (state) renderChat(); else updateTitle(); });
+  // na telefonie czat startuje zwinięty, żeby nie spychał plansz
+  if (window.matchMedia("(max-width: 760px)").matches) {
+    el.chat.classList.add("collapsed");
+    el.chatToggle.setAttribute("aria-expanded", "false");
+  }
+
   function render() {
     if (!state) return;
     const me = state.you;
@@ -347,6 +425,7 @@
     if (setup) renderDock();
     renderMyBoard();
     if (state.phase !== "setup") { renderEnemyBoard(); renderFleets(); }
+    renderChat();
 
     if (state.phase === "finished") {
       const opp = 1 - me;
@@ -412,7 +491,8 @@
     el.game.hidden = false;
     el.roomInfo.hidden = false;
     el.roomCode.textContent = room;
-    document.title = `Statki · ${room}`;
+    chatSeen = 0; chatKey = ""; unreadNow = 0;
+    updateTitle();
     connect();
   }
 
